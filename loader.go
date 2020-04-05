@@ -1,9 +1,12 @@
-# loader
-loader provides easy to use object loading capability.
+// Copyright (c) 2019,CAO HONGJU. All rights reserved.
+// Use of this source code is governed by a MIT-style
+// license that can be found in the LICENSE file.
 
-## Motivation
+/*
+Package loader provides easy to use object loading capability.
 
-Sometimes, we need to load the same object from multiple sources in order of priority.
+Sometimes, we need to load the same object from multiple sources
+in order of priority.
 
 For example, the configuration data of the application:
  1. Built-in default value
@@ -14,28 +17,9 @@ For example, the configuration data of the application:
 
 
 loader provides a surprisingly simple pattern.
-
-## Installing
-
-1. Get package:
-
-	```Shell
-	go get -u github.com/cnotch/loader
-	```
-
-2. Import it in your code:
-
-	```Go
-	import "github.com/cnotch/loader"
-	```
-
-## Usage
-
 For example, load configuration, which typically consists of the following steps:
-
 1. Define configuration structure
 
-``` go
 	type Config struct {
 		Log  LogConfig  `json:"log,omitempty"`
 		Rtsp RtspConfig `json:"rtsp"`
@@ -48,11 +32,9 @@ For example, load configuration, which typically consists of the following steps
 	type LogConfig struct {
 		Debug bool `json:"debug"`
 	}
-```
 
 2. Load by priority
 
-```go
 	import (
 		"flag"
 
@@ -87,6 +69,35 @@ For example, load configuration, which typically consists of the following steps
 		}
 		return conf
 	}
-```
 
-When used to load configurations, loader takes care of simplicity and compatibility, and take full advantage of the built-in flag package with little additional constraints.
+
+When used to load configurations, loader takes care of simplicity
+and compatibility, and take full advantage of the built-in flag package
+with little additional constraints.
+*/
+package loader
+
+// Loader loads the value from a source.
+type Loader interface {
+	// Load loads the value and stores it in the value pointed to by v.
+	Load(v interface{}) error
+}
+
+// Func is an adapter to allow the use of ordinary functions as Loader.
+type Func func(v interface{}) error
+
+// Load loads the value and stores it in the value pointed to by v.
+func (l Func) Load(v interface{}) error {
+	return l(v)
+}
+
+// Load loads the values from the loader in order
+// and store them in the values pointed to by v.
+func Load(v interface{}, loaders ...Loader) error {
+	for _, loader := range loaders {
+		if err := loader.Load(v); err != nil {
+			return err
+		}
+	}
+	return nil
+}
